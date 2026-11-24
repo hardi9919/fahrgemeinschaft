@@ -27,7 +27,8 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:18px;height:6px
 background:repeating-linear-gradient(90deg,var(--sign) 0 48px,transparent 48px 84px)}
 .wrap{max-width:1240px;margin:0 auto}
 h1{font-size:clamp(32px,5vw,52px);font-weight:800}
-#event{font:600 18px/1.3 Overpass,sans-serif;background:transparent;border:0;border-bottom:1px dashed #ffffff55;color:var(--sign);padding:4px 0;margin-top:10px;width:min(100%,520px)}
+#event{font:600 18px/1.3 Overpass,sans-serif;background:transparent;border:0;border-bottom:1px dashed #ffffff55;color:var(--sign);padding:4px 0;margin-top:10px;width:min(100%,760px);display:block;resize:none;overflow:hidden;font-family:Overpass,sans-serif}
+#event::placeholder{color:#ffc62999}
 #event:focus{outline:none;border-bottom-color:var(--sign)}
 .stats{display:flex;flex-wrap:wrap;gap:12px 32px;margin-top:22px}
 .stat b{display:block;font:800 32px/1 Overpass,sans-serif;color:#fff}.stat span{font-size:14px;color:#c9cbcf}
@@ -45,8 +46,8 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid 
 .roles input:checked+label{background:var(--sign);color:var(--signInk);border-color:var(--sign)}
 .roles input:focus-visible+label{outline:3px solid var(--sign);outline-offset:2px}
 .hint{font-size:13px;color:var(--mute);margin:6px 0 0}
-.btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 18px;border-radius:10px;border:0;cursor:pointer;background:var(--road);color:#fff}
-:root:not([data-theme=light]) .btn{background:light-dark(var(--road),var(--sign));color:light-dark(#fff,var(--signInk))}
+.btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 18px;border-radius:10px;border:0;cursor:pointer;background:light-dark(var(--road),var(--sign));color:light-dark(#fff,var(--signInk))}
+.btn:disabled{opacity:.6;cursor:wait}
 #addForm .btn{width:100%;margin-top:18px}
 .x{border:0;background:transparent;color:var(--mute);cursor:pointer;min-width:44px;min-height:44px;font-size:20px;line-height:1;border-radius:8px}
 .x:hover{color:var(--bad)}
@@ -87,7 +88,7 @@ dialog p{margin:0 0 18px}
 <div class="ro" id="ro">Keine Verbindung zur Datenbank – bitte Seite neu laden.</div>
 <header class="band"><div class="wrap">
   <h1>Fahrgemeinschaft</h1>
-  <input id="event" type="text" aria-label="Wohin geht's?" placeholder="Wohin geht's? (z. B. Ausflug am Samstag)">
+  <textarea id="event" rows="1" maxlength="80" aria-label="Wohin geht's?" placeholder="Wohin geht's? (z. B. Ausflug am Samstag)"></textarea>
   <div class="stats" id="stats"></div>
 </div></header>
 <main class="band"><div class="wrap">
@@ -143,7 +144,7 @@ const seekers=()=>S.people.filter(p=>!p.ride&&(p.role==='mitfahrer'||(p.role==='
 const freeCount=d=>d.seats-riders(d).length;
 
 function render(){
-  if(document.activeElement!==$('event'))$('event').value=S.event;
+  if(document.activeElement!==$('event')){$('event').value=S.event;const t=$('event');t.style.height='auto';t.style.height=t.scrollHeight+'px';}
   const cs=cars(),sk=seekers();
   const confirmed=cs.filter(c=>c.role==='fahrer'||riders(c).length);
   const free=confirmed.reduce((n,c)=>n+Math.max(0,freeCount(c)),0);
@@ -213,13 +214,16 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
   if(b.dataset.out)act('leave_car',{p_person:b.dataset.out});
   if(b.dataset.del){const p=P(b.dataset.del);if(!p)return;delId=p.id;
     const n=riders(p).length;
-    $('dlgText').textContent=`„${p.name}“ wirklich austragen?`+(n?` ${n===1?'Die Person, die':'Die '+n+' Personen, die'} bei ${p.name} mitfährt${n===1?'':'en'}, ${n===1?'sucht':'suchen'} dann wieder einen Platz.`:'');
+    $('dlgText').textContent=`„${p.name}“ wirklich austragen?`+(n?` ${n===1?'Die Person, die':'Die '+n+' Personen, die'} bei ${p.name} ${n===1?'mitfährt':'mitfahren'}, ${n===1?'sucht':'suchen'} dann wieder einen Platz.`:'');
     $('dlg').showModal();}
 });
 let delId=null;
 $('dlgNo').addEventListener('click',()=>$('dlg').close());
 $('dlgYes').addEventListener('click',()=>{$('dlg').close();if(delId)act('remove_person',{p_person:delId});delId=null;});
-$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close();});
+$('dlg').addEventListener('click',e=>{const r=$('dlg').getBoundingClientRect();if(e.target===$('dlg')&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))$('dlg').close();});
+const grow=()=>{const t=$('event');t.style.height='auto';t.style.height=t.scrollHeight+'px';};
+$('event').addEventListener('input',grow);addEventListener('resize',grow);
+$('event').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}});
 
 render();syncForm();load();
 SB.channel('alles').on('postgres_changes',{event:'*',schema:'public',table:'people'},soon)
