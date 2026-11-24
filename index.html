@@ -66,7 +66,9 @@ ul.seek{list-style:none;margin:0;padding:0}
 .wheel{flex:none;width:40px;height:40px;border-radius:50%;background:var(--sign);color:var(--signInk);display:grid;place-items:center}
 .car h3{font-size:22px;font-weight:800;margin-top:2px;overflow-wrap:anywhere}
 .car .sub{font-size:13px;color:var(--mute)}
-.car .top .x{margin:-8px -8px 0 auto}
+.car .acts{margin:-8px -8px 0 auto;display:flex;flex:none}.seek .acts{display:flex}
+.x svg{display:block;margin:auto}
+#edlg label:first-of-type{margin-top:0}
 .seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
 .seatx{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:4px 4px 4px 12px;min-height:48px;border-radius:12px;background:var(--seat);font-weight:600;font-size:15px}
 .seatx span{overflow-wrap:anywhere}
@@ -142,7 +144,26 @@ dialog p{margin:0 0 18px}
   <p id="dlgText"></p>
   <div class="dlgBtns"><button class="btn ghost" id="dlgNo" type="button">Abbrechen</button><button class="btn danger" id="dlgYes" type="button">Löschen</button></div>
 </dialog>
-<footer class="band"><div class="wrap">Alle Einträge sind für jeden sichtbar, der den Link hat, und aktualisieren sich automatisch. Mit × trägt man sich wieder aus.</div></footer>
+<dialog id="edlg" aria-labelledby="eTitle"><form id="eForm" novalidate>
+  <h2 id="eTitle">Eintrag bearbeiten</h2>
+  <label for="eName">Name</label>
+  <input id="eName" type="text" maxlength="40" autocomplete="off">
+  <div id="eCarBox">
+    <label for="eSeats" id="eSeatsLbl">Freie Plätze (ohne Fahrer)</label>
+    <input id="eSeats" type="number" min="0" max="8" inputmode="numeric">
+    <label for="ePlace">Abfahrt von</label>
+    <select id="ePlace"><option value="">Noch offen</option><option>Hecht HBC</option><option>Bushaltestelle HBC</option><option value="__other">Anderer Ort …</option></select>
+    <input id="eFrom" type="text" maxlength="40" placeholder="Ort eingeben" aria-label="Anderer Abfahrtsort" hidden style="margin-top:8px">
+    <label id="eTimeLbl">Abfahrt um</label>
+    <div class="time" role="group" aria-labelledby="eTimeLbl">
+      <select id="eHour" aria-label="Stunde"><option value="">––</option></select><span>:</span>
+      <select id="eMin" aria-label="Minute"><option value="">––</option></select><span>Uhr</span>
+    </div>
+  </div>
+  <p class="err" id="eErr" role="alert"></p>
+  <div class="dlgBtns"><button class="btn ghost" id="eNo" type="button">Abbrechen</button><button class="btn" type="submit">Speichern</button></div>
+</form></dialog>
+<footer class="band"><div class="wrap">Alle Einträge sind für jeden sichtbar, der den Link hat, und aktualisieren sich automatisch. Mit dem Stift bearbeitet man seinen Eintrag, mit × trägt man sich wieder aus.</div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -168,7 +189,7 @@ function render(){
     .map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const opts=cs.filter(c=>freeCount(c)>0);
   $('seek').innerHTML=!loaded?'<li style="color:var(--mute)">Lädt …</li>':sk.length?sk.map(p=>{const o=opts.filter(c=>c.id!==p.id);return `<li><div class="nm">${esc(p.name)}<span class="tag">${p.role==='egal'?(p.seats>0?'egal · könnte fahren':'egal'):'sucht Platz'}</span></div>
-    <button class="x" data-del="${esc(p.id)}" aria-label="${esc(p.name)} austragen">×</button>
+    <div class="acts"><button class="x" data-edit="${esc(p.id)}" aria-label="${esc(p.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(p.id)}" aria-label="${esc(p.name)} austragen">×</button></div>
     <select data-join="${esc(p.id)}" aria-label="Einsteigen bei"><option value="">${o.length?'Einsteigen bei …':'Gerade kein Platz frei'}</option>
     ${o.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} (${freeCount(c)} frei)</option>`).join('')}</select></li>`;}).join('')
     :'<li style="color:var(--mute)">Niemand – alle versorgt.</li>';
@@ -183,7 +204,7 @@ function render(){
     return `<article class="car${maybe?' maybe':''}" id="car-${esc(c.id)}"><div class="top">
       <div class="wheel" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.5 10.5h6M14.5 10.5h6M12 14.5V21"/></svg></div>
       <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} Plätze</div></div>
-      <button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div>
+      <div class="acts"><button class="x" data-edit="${esc(c.id)}" aria-label="${esc(c.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div></div>
       <div class="when">${c.from?`<span>${esc(c.from)}</span>`:'<span class="no">Ort offen</span>'}${c.time?`<span>${esc(c.time)} Uhr</span>`:'<span class="no">Zeit offen</span>'}</div>
       <div class="seats">${seats.join('')}</div></article>`;}).join('')
     :'<div class="empty"><h3 style="font-size:22px;color:var(--ink);margin-bottom:6px">Noch keine Autos</h3>Wer fahren kann, trägt sich links mit seinen freien Plätzen ein.</div>';
@@ -193,7 +214,7 @@ async function load(){
   const [pp,mm]=await Promise.all([SB.from('people').select('*').order('created_at'),SB.from('meta').select('event').eq('id',1).maybeSingle()]);
   if(pp.error){$('ro').classList.add('on');return;}
   $('ro').classList.remove('on');
-  S.people=pp.data.map(p=>({id:p.id,name:p.name,role:p.role,seats:p.seats,from:p.from_place,time:p.dep_time?p.dep_time.replace(/^0/,''):'',ride:p.ride}));
+  S.people=pp.data.map(p=>({id:p.id,name:p.name,role:p.role,seats:p.seats,from:p.from_place,time:p.dep_time?p.dep_time.replace(/^0/,''):'',rawTime:p.dep_time||'',ride:p.ride}));
   S.event=mm.data?.event||'';loaded=true;render();
 }
 let t=null;const soon=()=>{clearTimeout(t);t=setTimeout(load,250);};
@@ -210,10 +231,12 @@ function syncForm(){const r=document.querySelector('[name=role]:checked')?.value
   $('seatBox').hidden=!(r==='fahrer'||r==='egal');$('egalHint').hidden=r!=='egal';$('fFrom').hidden=$('fPlace').value!=='__other';
   $('fSeats').previousElementSibling.textContent=r==='egal'?'Plätze, falls ich fahre':'Freie Plätze (ohne Fahrer)';}
 document.querySelectorAll('[name=role]').forEach(r=>r.addEventListener('change',syncForm));
-for(let h=5;h<=23;h++)$('fHour').add(new Option(String(h),String(h).padStart(2,'0')));
-for(let h=0;h<5;h++)$('fHour').add(new Option(String(h),String(h).padStart(2,'0')));
-for(let m=0;m<60;m+=5)$('fMin').add(new Option(String(m).padStart(2,'0'),String(m).padStart(2,'0')));
-$('fPlace').addEventListener('change',()=>{const o=$('fPlace').value==='__other';$('fFrom').hidden=!o;if(o)$('fFrom').focus();});
+for(const [H,M] of [['fHour','fMin'],['eHour','eMin']]){
+  for(let h=5;h<=23;h++)$(H).add(new Option(String(h),String(h).padStart(2,'0')));
+  for(let h=0;h<5;h++)$(H).add(new Option(String(h),String(h).padStart(2,'0')));
+  for(let m=0;m<60;m+=5)$(M).add(new Option(String(m).padStart(2,'0'),String(m).padStart(2,'0')));}
+for(const [P,F] of [['fPlace','fFrom'],['ePlace','eFrom']])
+  $(P).addEventListener('change',()=>{const o=$(P).value==='__other';$(F).hidden=!o;if(o)$(F).focus();});
 
 $('addForm').addEventListener('submit',async e=>{e.preventDefault();
   const name=$('fName').value.trim(),role=document.querySelector('[name=role]:checked')?.value;
@@ -237,15 +260,47 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.seat&&t.value)act('join_car',{p_person:t.value,p_car:t.dataset.seat},t.dataset.seat);});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.out)act('leave_car',{p_person:b.dataset.out});
+  if(b.dataset.edit)openEdit(b.dataset.edit);
   if(b.dataset.del){const p=P(b.dataset.del);if(!p)return;delId=p.id;
     const n=riders(p).length;
     $('dlgText').textContent=`„${p.name}“ wirklich austragen?`+(n?` ${n===1?'Die Person, die':'Die '+n+' Personen, die'} bei ${p.name} ${n===1?'mitfährt':'mitfahren'}, ${n===1?'sucht':'suchen'} dann wieder einen Platz.`:'');
     $('dlg').showModal();}
 });
-let delId=null;
+let delId=null,editId=null;
+const PLACES=['Hecht HBC','Bushaltestelle HBC'];
+function openEdit(id){const p=P(id);if(!p)return;editId=id;
+  const car=p.role!=='mitfahrer';
+  $('eErr').textContent='';$('eName').value=p.name;$('eCarBox').hidden=!car;
+  $('eSeatsLbl').textContent=p.role==='egal'?'Plätze, falls ich fahre (0 = fahre nicht)':'Freie Plätze (ohne Fahrer)';
+  $('eSeats').min=p.role==='fahrer'?1:0;$('eSeats').value=p.seats;
+  $('ePlace').value=PLACES.includes(p.from)?p.from:(p.from?'__other':'');
+  $('eFrom').value=PLACES.includes(p.from)?'':p.from;$('eFrom').hidden=$('ePlace').value!=='__other';
+  const [h,m]=(p.rawTime||':').split(':');$('eHour').value=h||'';$('eMin').value=h?m:'';
+  $('edlg').showModal();$('eName').focus();}
+$('eNo').addEventListener('click',()=>$('edlg').close());
+$('eForm').addEventListener('submit',async e=>{e.preventDefault();
+  const p=P(editId);if(!p){$('edlg').close();return;}
+  const err=t=>{$('eErr').textContent=t;};
+  const name=$('eName').value.trim(),seats=parseInt($('eSeats').value,10);
+  if(!name)return err('Bitte einen Namen eingeben.');
+  let from='',time='',st=0;
+  if(p.role!=='mitfahrer'){
+    const lo=p.role==='fahrer'?1:0;
+    if(!(seats>=lo&&seats<=8))return err(`Bitte ${lo} bis 8 Plätze angeben.`);
+    st=seats;
+    const pl=$('ePlace').value;from=pl==='__other'?$('eFrom').value.trim():pl;
+    if(pl==='__other'&&!from)return err('Bitte den Abfahrtsort eingeben.');
+    const h=$('eHour').value,m=$('eMin').value;
+    if(!h&&m)return err('Bitte auch die Stunde der Abfahrt auswählen.');
+    time=h?h+':'+(m||'00'):'';}
+  const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  const {error}=await SB.rpc('update_person',{p_person:p.id,p_name:name,p_seats:st,p_from:from,p_time:time});
+  btn.disabled=false;
+  if(error)return err(error.message||'Das hat nicht geklappt.');
+  $('edlg').close();await load();const el=$('car-'+p.id);if(el)el.classList.add('flash');});
 $('dlgNo').addEventListener('click',()=>$('dlg').close());
 $('dlgYes').addEventListener('click',()=>{$('dlg').close();if(delId)act('remove_person',{p_person:delId});delId=null;});
-$('dlg').addEventListener('click',e=>{const r=$('dlg').getBoundingClientRect();if(e.target===$('dlg')&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))$('dlg').close();});
+for(const d of ['dlg','edlg'])$(d).addEventListener('click',e=>{const r=$(d).getBoundingClientRect();if(e.target===$(d)&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))$(d).close();});
 const grow=()=>{const t=$('event');t.style.height='auto';t.style.height=t.scrollHeight+'px';};
 $('event').addEventListener('input',grow);addEventListener('resize',grow);
 $('event').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}});
