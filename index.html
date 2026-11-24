@@ -149,7 +149,7 @@ function render(){
   const confirmed=cs.filter(c=>c.role==='fahrer'||riders(c).length);
   const free=confirmed.reduce((n,c)=>n+Math.max(0,freeCount(c)),0);
   const needy=sk.filter(p=>p.role==='mitfahrer').length;
-  $('stats').innerHTML=[[S.people.length,'Personen'],[confirmed.length,'Autos fix'],[free,'Plätze frei'],[needy,'suchen noch']]
+  $('stats').innerHTML=[[S.people.length,S.people.length===1?'Person':'Personen'],[confirmed.length,'Autos fix'],[free,'Plätze frei'],[needy,'suchen noch']]
     .map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const opts=cs.filter(c=>freeCount(c)>0);
   $('seek').innerHTML=!loaded?'<li style="color:var(--mute)">Lädt …</li>':sk.length?sk.map(p=>{const o=opts.filter(c=>c.id!==p.id);return `<li><div class="nm">${esc(p.name)}<span class="tag">${p.role==='egal'?(p.seats>0?'egal · könnte fahren':'egal'):'sucht Platz'}</span></div>
