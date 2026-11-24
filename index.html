@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fahrgemeinschaft</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: freundlich, praktisch, wie ein Aushang am Schwarzen Brett
+   IDEA: Autos als Sitzpläne – jeder freie Platz ist ein Feld zum Eintragen
+   PICTURE: die Autokarten mit ihren Sitzplätzen selbst
+   COLOUR and TYPE: Asphalt-Dunkel, Straßenschild-Gelb, Weiß; Overpass (Autobahnschrift) + Inter
+   LAYOUT: Kopfband mit Fahrbahnmarkierung, darunter Formular links, Autos rechts; mobil gestapelt */
+:root{color-scheme:light dark;
+--bg:light-dark(#f6f5f1,#111315);--card:light-dark(#fff,#1b1e21);--ink:light-dark(#16181b,#eceae4);
+--mute:light-dark(#5d6168,#9ca1a8);--line:light-dark(#dedbd3,#2c3035);--road:#23262a;--sign:#ffc629;--signInk:#1a1600;
+--free:light-dark(#fff8df,#2a2614);--seat:light-dark(#eef0f2,#262a2f);--bad:light-dark(#b3261e,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Overpass,Inter,sans-serif;line-height:1.05;margin:0;text-wrap:balance}
+.band{padding:clamp(28px,4vw,56px) max(5vw,16px)}
+header{background:var(--road);color:#f3f1ea;position:relative;padding-bottom:clamp(40px,5vw,64px)}
+header::after{content:"";position:absolute;left:0;right:0;bottom:18px;height:6px;
+background:repeating-linear-gradient(90deg,var(--sign) 0 48px,transparent 48px 84px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-size:clamp(32px,5vw,52px);font-weight:800}
+#event{font:600 18px/1.3 Overpass,sans-serif;background:transparent;border:0;border-bottom:1px dashed #ffffff55;color:var(--sign);padding:4px 0;margin-top:10px;width:min(100%,520px)}
+#event:focus{outline:none;border-bottom-color:var(--sign)}
+.stats{display:flex;flex-wrap:wrap;gap:12px 32px;margin-top:22px}
+.stat b{display:block;font:800 32px/1 Overpass,sans-serif;color:#fff}.stat span{font-size:14px;color:#c9cbcf}
+main .wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+@media(max-width:820px){main .wrap{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.panel+.panel{margin-top:20px}
+h2{font-size:22px;font-weight:800;margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input[type=text],input[type=number],select{width:100%;font:16px Inter,sans-serif;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--sign);outline-offset:2px}
+.roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.roles input{position:absolute;opacity:0}
+.roles label{margin:0;text-align:center;padding:10px 4px;min-height:44px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;display:grid;place-items:center}
+.roles input:checked+label{background:var(--sign);color:var(--signInk);border-color:var(--sign)}
+.roles input:focus-visible+label{outline:3px solid var(--sign);outline-offset:2px}
+.hint{font-size:13px;color:var(--mute);margin:6px 0 0}
+.btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 18px;border-radius:10px;border:0;cursor:pointer;background:var(--road);color:#fff}
+:root:not([data-theme=light]) .btn{background:light-dark(var(--road),var(--sign));color:light-dark(#fff,var(--signInk))}
+#addForm .btn{width:100%;margin-top:18px}
+.x{border:0;background:transparent;color:var(--mute);cursor:pointer;min-width:44px;min-height:44px;font-size:20px;line-height:1;border-radius:8px}
+.x:hover{color:var(--bad)}
+.err{color:var(--bad);font-size:14px;margin:8px 0 0;min-height:1em}
+ul.seek{list-style:none;margin:0;padding:0}
+.seek li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 8px;padding:10px 0;border-top:1px solid var(--line)}
+.seek li:first-child{border-top:0}
+.seek .nm{font-weight:600}.seek .tag{font-size:13px;color:var(--mute);font-weight:400;margin-left:6px}
+.seek select{grid-column:1/-1}
+.cars{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:20px}
+.car{background:var(--card);border:1px solid var(--line);border-radius:22px 22px 14px 14px;padding:18px 18px 16px;position:relative}
+.car.maybe{border-style:dashed}
+.car .top{display:flex;align-items:flex-start;gap:10px}
+.wheel{flex:none;width:40px;height:40px;border-radius:50%;background:var(--sign);color:var(--signInk);display:grid;place-items:center}
+.car h3{font-size:22px;font-weight:800;margin-top:2px;overflow-wrap:anywhere}
+.car .sub{font-size:13px;color:var(--mute)}
+.car .top .x{margin:-8px -8px 0 auto}
+.seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+.seatx{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:4px 4px 4px 12px;min-height:48px;border-radius:12px;background:var(--seat);font-weight:600;font-size:15px}
+.seatx span{overflow-wrap:anywhere}
+.seatx.free{background:var(--free);border:1.5px dashed var(--sign);padding:4px}
+.seatx.free select{border:0;background:transparent;font-weight:600;font-size:15px;padding:6px 8px;cursor:pointer}
+.empty{border:1.5px dashed var(--line);border-radius:14px;padding:32px 20px;text-align:center;color:var(--mute)}
+.ro{background:var(--sign);color:var(--signInk);padding:10px max(5vw,16px);font-size:14px;display:none}
+.ro.on{display:block}
+.flash{animation:fl .6s ease}@keyframes fl{from{box-shadow:0 0 0 4px var(--sign)}to{box-shadow:0 0 0 0 transparent}}
+@media(prefers-reduced-motion:reduce){.flash{animation:none}}
+footer{color:var(--mute);font-size:13px;padding-top:0}
+</style>
+</head>
+<body>
+<div class="ro" id="ro">Keine Verbindung zur Datenbank – bitte Seite neu laden.</div>
+<header class="band"><div class="wrap">
+  <h1>Fahrgemeinschaft</h1>
+  <input id="event" type="text" aria-label="Wohin geht's?" placeholder="Wohin geht's? (z. B. Ausflug am Samstag)">
+  <div class="stats" id="stats"></div>
+</div></header>
+<main class="band"><div class="wrap">
+  <div>
+    <form class="panel" id="addForm" novalidate>
+      <h2>Eintragen</h2>
+      <label for="fName">Name</label>
+      <input id="fName" type="text" autocomplete="name" maxlength="40" required>
+      <label id="roleLbl">Ich …</label>
+      <div class="roles" role="radiogroup" aria-labelledby="roleLbl">
+        <input type="radio" name="role" id="r1" value="fahrer"><label for="r1">kann fahren</label>
+        <input type="radio" name="role" id="r2" value="mitfahrer"><label for="r2">suche Platz</label>
+        <input type="radio" name="role" id="r3" value="egal"><label for="r3">egal / beides</label>
+      </div>
+      <div id="seatBox" hidden>
+        <label for="fSeats">Freie Plätze (ohne Fahrer)</label>
+        <input id="fSeats" type="number" min="1" max="8" value="3" inputmode="numeric">
+        <label for="fFrom">Abfahrt von <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
+        <input id="fFrom" type="text" maxlength="40" placeholder="z. B. Bahnhof, 9 Uhr">
+        <p class="hint" id="egalHint" hidden>Du erscheinst als mögliches Auto <em>und</em> kannst dich trotzdem bei anderen eintragen. Sobald jemand bei dir einsteigt, fährst du.</p>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+      <button class="btn" type="submit">Eintragen</button>
+    </form>
+    <section class="panel">
+      <h2>Suchen noch einen Platz</h2>
+      <ul class="seek" id="seek"></ul>
+    </section>
+  </div>
+  <section aria-label="Autos">
+    <div class="cars" id="cars"></div>
+  </section>
+</div></main>
+<footer class="band"><div class="wrap">Alle Einträge sind für jeden sichtbar, der den Link hat, und aktualisieren sich automatisch. Mit × trägt man sich wieder aus.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+{
+const SB=window.supabase.createClient('https://ffdktpcsznfpcvzfahcb.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmZGt0cGNzem5mcGN2emZhaGNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MDA4OTcsImV4cCI6MjExMTA3Njg5N30.lOVXfshKWXXJQjuTVrlAnu6BfphkGV6PhdvHd9uc7h8');
+let S={event:'',people:[]},loaded=false;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=id=>S.people.find(p=>p.id===id);
+const riders=d=>S.people.filter(p=>p.ride===d.id);
+const isCar=p=>p.role==='fahrer'||(p.role==='egal'&&p.seats>0&&!p.ride);
+const cars=()=>S.people.filter(isCar).sort((a,b)=>(a.role==='egal'&&!riders(a).length)-(b.role==='egal'&&!riders(b).length));
+const seekers=()=>S.people.filter(p=>!p.ride&&(p.role==='mitfahrer'||(p.role==='egal'&&!riders(p).length)));
+const freeCount=d=>d.seats-riders(d).length;
+
+function render(){
+  if(document.activeElement!==$('event'))$('event').value=S.event;
+  const cs=cars(),sk=seekers();
+  const confirmed=cs.filter(c=>c.role==='fahrer'||riders(c).length);
+  const free=confirmed.reduce((n,c)=>n+Math.max(0,freeCount(c)),0);
+  const needy=sk.filter(p=>p.role==='mitfahrer').length;
+  $('stats').innerHTML=[[S.people.length,'Personen'],[confirmed.length,'Autos fix'],[free,'Plätze frei'],[needy,'suchen noch']]
+    .map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const opts=cs.filter(c=>freeCount(c)>0);
+  $('seek').innerHTML=!loaded?'<li style="color:var(--mute)">Lädt …</li>':sk.length?sk.map(p=>{const o=opts.filter(c=>c.id!==p.id);return `<li><div class="nm">${esc(p.name)}<span class="tag">${p.role==='egal'?(p.seats>0?'egal · könnte fahren':'egal'):'sucht Platz'}</span></div>
+    <button class="x" data-del="${esc(p.id)}" aria-label="${esc(p.name)} austragen">×</button>
+    <select data-join="${esc(p.id)}" aria-label="Einsteigen bei"><option value="">${o.length?'Einsteigen bei …':'Gerade kein Platz frei'}</option>
+    ${o.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} (${freeCount(c)} frei)</option>`).join('')}</select></li>`;}).join('')
+    :'<li style="color:var(--mute)">Niemand – alle versorgt.</li>';
+  if(!loaded){$('cars').innerHTML='<div class="empty">Lädt …</div>';return;}
+  $('cars').innerHTML=cs.length?cs.map(c=>{
+    const rs=riders(c),maybe=c.role==='egal'&&!rs.length;
+    const cand=sk.filter(p=>p.id!==c.id);
+    const seats=[];
+    for(let i=0;i<c.seats;i++){const r=rs[i];
+      seats.push(r?`<div class="seatx"><span>${esc(r.name)}</span><button class="x" data-out="${esc(r.id)}" aria-label="${esc(r.name)} aussteigen">×</button></div>`
+      :`<div class="seatx free"><select data-seat="${esc(c.id)}" aria-label="Freien Platz bei ${esc(c.name)} belegen"><option value="">Platz frei</option>${cand.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div>`);}
+    return `<article class="car${maybe?' maybe':''}" id="car-${esc(c.id)}"><div class="top">
+      <div class="wheel" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.5 10.5h6M14.5 10.5h6M12 14.5V21"/></svg></div>
+      <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} Plätze${c.from?' · '+esc(c.from):''}</div></div>
+      <button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div>
+      <div class="seats">${seats.join('')}</div></article>`;}).join('')
+    :'<div class="empty"><h3 style="font-size:22px;color:var(--ink);margin-bottom:6px">Noch keine Autos</h3>Wer fahren kann, trägt sich links mit seinen freien Plätzen ein.</div>';
+}
+
+async function load(){
+  const [pp,mm]=await Promise.all([SB.from('people').select('*').order('created_at'),SB.from('meta').select('event').eq('id',1).maybeSingle()]);
+  if(pp.error){$('ro').classList.add('on');return;}
+  $('ro').classList.remove('on');
+  S.people=pp.data.map(p=>({id:p.id,name:p.name,role:p.role,seats:p.seats,from:p.from_place,ride:p.ride}));
+  S.event=mm.data?.event||'';loaded=true;render();
+}
+let t=null;const soon=()=>{clearTimeout(t);t=setTimeout(load,250);};
+async function act(fn,args,flashId){
+  const {error}=await SB.rpc(fn,args);
+  if(error){$('err').textContent=error.message||'Das hat nicht geklappt.';$('addForm').scrollIntoView({block:'nearest'});}
+  else $('err').textContent='';
+  await load();
+  if(!error&&flashId){const el=$('car-'+flashId);if(el)el.classList.add('flash');}
+  return !error;
+}
+
+function syncForm(){const r=document.querySelector('[name=role]:checked')?.value;
+  $('seatBox').hidden=!(r==='fahrer'||r==='egal');$('egalHint').hidden=r!=='egal';
+  $('fSeats').previousElementSibling.textContent=r==='egal'?'Plätze, falls ich fahre':'Freie Plätze (ohne Fahrer)';}
+document.querySelectorAll('[name=role]').forEach(r=>r.addEventListener('change',syncForm));
+
+$('addForm').addEventListener('submit',async e=>{e.preventDefault();
+  const name=$('fName').value.trim(),role=document.querySelector('[name=role]:checked')?.value;
+  const seats=parseInt($('fSeats').value,10);
+  if(!name)return $('err').textContent='Bitte einen Namen eingeben.';
+  if(!role)return $('err').textContent='Bitte auswählen: fahren, mitfahren oder egal.';
+  if(role==='fahrer'&&!(seats>=1&&seats<=8))return $('err').textContent='Bitte 1 bis 8 freie Plätze angeben.';
+  const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  const ok=await act('add_person',{p_name:name,p_role:role,p_seats:role==='mitfahrer'?0:(seats>=1&&seats<=8?seats:0),p_from:role==='mitfahrer'?'':$('fFrom').value.trim()});
+  btn.disabled=false;if(ok){e.target.reset();syncForm();}
+});
+$('event').addEventListener('change',e=>act('set_event',{p_event:e.target.value.trim()}));
+
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.join&&t.value)act('join_car',{p_person:t.dataset.join,p_car:t.value},t.value);
+  if(t.dataset.seat&&t.value)act('join_car',{p_person:t.value,p_car:t.dataset.seat},t.dataset.seat);});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.out)act('leave_car',{p_person:b.dataset.out});
+  if(b.dataset.del){const p=P(b.dataset.del);if(p&&!b.dataset.sure){b.dataset.sure='1';b.textContent='?';b.setAttribute('aria-label','Nochmal tippen zum Austragen');setTimeout(()=>{b.dataset.sure='';b.textContent='×';},2500);return;}
+    act('remove_person',{p_person:b.dataset.del});}
+});
+
+render();syncForm();load();
+SB.channel('alles').on('postgres_changes',{event:'*',schema:'public',table:'people'},soon)
+  .on('postgres_changes',{event:'*',schema:'public',table:'meta'},soon).subscribe();
+setInterval(()=>{if(!document.hidden)load();},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
+}
+</script>
+
+</body>
+</html>
