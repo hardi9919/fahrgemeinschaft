@@ -15,7 +15,7 @@
    LAYOUT: Kopfband mit Fahrbahnmarkierung, darunter Formular links, Autos rechts; mobil gestapelt */
 :root{color-scheme:light dark;
 --bg:light-dark(#f6f5f1,#111315);--card:light-dark(#fff,#1b1e21);--ink:light-dark(#16181b,#eceae4);
---mute:light-dark(#5d6168,#9ca1a8);--line:light-dark(#dedbd3,#2c3035);--road:#23262a;--sign:#ffc629;--signInk:#1a1600;
+--mute:light-dark(#5d6168,#9ca1a8);--line:light-dark(#dedbd3,#2c3035);--road:#23262a;--sign:#ffc629;--signDeep:light-dark(#9a6700,#ffc629);--signInk:#1a1600;
 --free:light-dark(#fff8df,#2a2614);--seat:light-dark(#eef0f2,#262a2f);--bad:light-dark(#b3261e,#ff8a80)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
@@ -63,7 +63,11 @@ ul.seek{list-style:none;margin:0;padding:0}
 .seek select{grid-column:1/-1}
 .cars{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:20px}
 .car{background:var(--card);border:1px solid var(--line);border-radius:22px 22px 14px 14px;padding:18px 18px 16px;position:relative}
-.car.maybe{border-style:dashed}
+.car.maybe{border-style:dashed;border-color:light-dark(#cfcabd,#3a3e44);background:light-dark(#fbfaf6,#17191c)}
+.car.maybe h3,.car.maybe .when span{color:var(--mute)}
+.wheel.q{background:transparent;border:2px dashed var(--signDeep);color:var(--signDeep)}
+.wheel.q,.wheel.qb{position:relative}
+.wheel.q::after,.wheel.qb::after{content:"?";position:absolute;right:-6px;top:-6px;width:18px;height:18px;border-radius:50%;background:var(--signDeep);color:var(--card);font:800 12px/18px Inter,sans-serif;text-align:center}
 .car .top{display:flex;align-items:flex-start;gap:10px}
 .wheel{flex:none;width:40px;height:40px;border-radius:50%;background:var(--sign);color:var(--signInk);display:grid;place-items:center}
 .car h3{font-size:22px;font-weight:800;margin-top:2px;overflow-wrap:anywhere}
@@ -209,8 +213,8 @@ function render(){
       seats.push(r?`<div class="seatx"><span>${esc(r.name)}</span><button class="x" data-out="${esc(r.id)}" aria-label="${esc(r.name)} aussteigen">×</button></div>`
       :`<div class="seatx free"><select data-seat="${esc(c.id)}" aria-label="Freien Platz bei ${esc(c.name)} belegen"><option value="">Platz frei</option>${cand.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div>`);}
     return `<article class="car${maybe?' maybe':''}" id="car-${esc(c.id)}"><div class="top">
-      <div class="wheel" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.5 10.5h6M14.5 10.5h6M12 14.5V21"/></svg></div>
-      <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} ${c.seats===1?'Platz':'Plätze'}</div></div>
+      <div class="wheel${maybe?' q':c.role==='egal'?' qb':''}" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.5 10.5h6M14.5 10.5h6M12 14.5V21"/></svg></div>
+      <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'kann fahren, muss nicht':c.role==='egal'?'springt ein':'fährt'} · ${c.seats} ${c.seats===1?'Platz':'Plätze'}</div></div>
       <div class="acts"><button class="x" data-edit="${esc(c.id)}" aria-label="${esc(c.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div></div>
       <div class="when">${c.from?`<span>${esc(c.from)}</span>`:'<span class="no">Ort offen</span>'}${c.time?`<span>${esc(c.time)} Uhr</span>`:'<span class="no">Zeit offen</span>'}</div>
       ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
