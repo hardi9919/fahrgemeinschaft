@@ -280,7 +280,7 @@ function openEdit(id){const p=P(id);if(!p)return;editId=id;
 $('eNo').addEventListener('click',()=>$('edlg').close());
 $('eForm').addEventListener('submit',async e=>{e.preventDefault();
   const p=P(editId);if(!p){$('edlg').close();return;}
-  const err=t=>{$('eErr').textContent=t;};
+  const err=t=>{$('eErr').textContent=t;};err('');
   const name=$('eName').value.trim(),seats=parseInt($('eSeats').value,10);
   if(!name)return err('Bitte einen Namen eingeben.');
   let from='',time='',st=0;
