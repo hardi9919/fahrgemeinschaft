@@ -47,6 +47,8 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid 
 .roles input:focus-visible+label{outline:3px solid var(--sign);outline-offset:2px}
 .time{display:flex;align-items:center;gap:8px}.time select{width:auto;flex:1}.time span{font-weight:600}
 .car .when{margin-top:10px;font:800 17px/1.3 Overpass,sans-serif;display:flex;flex-wrap:wrap;gap:2px 14px}.car .when span{white-space:nowrap}.car .when .no{color:var(--mute);font-weight:600}
+.note{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--seat);font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.seek .note{grid-column:1/-1;margin:0}
 .hint{font-size:13px;color:var(--mute);margin:6px 0 0}
 .btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 18px;border-radius:10px;border:0;cursor:pointer;background:light-dark(var(--road),var(--sign));color:light-dark(#fff,var(--signInk))}
 .btn:disabled{opacity:.6;cursor:wait}
@@ -125,6 +127,8 @@ dialog p{margin:0 0 18px}
           <select id="fMin" aria-label="Minute"><option value="">––</option></select>
           <span>Uhr</span>
         </div>
+        <label for="fNote">Info <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
+        <input id="fNote" type="text" maxlength="120" placeholder="z. B. Fahre schon früher wieder heim">
         <p class="hint" id="egalHint" hidden>Du erscheinst als mögliches Auto <em>und</em> kannst dich trotzdem bei anderen eintragen. Sobald jemand bei dir einsteigt, fährst du.</p>
       </div>
       <p class="err" id="err" role="alert"></p>
@@ -159,6 +163,8 @@ dialog p{margin:0 0 18px}
       <select id="eHour" aria-label="Stunde"><option value="">––</option></select><span>:</span>
       <select id="eMin" aria-label="Minute"><option value="">––</option></select><span>Uhr</span>
     </div>
+    <label for="eNote">Info <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
+    <input id="eNote" type="text" maxlength="120" placeholder="z. B. Fahre schon früher wieder heim">
   </div>
   <p class="err" id="eErr" role="alert"></p>
   <div class="dlgBtns"><button class="btn ghost" id="eNo" type="button">Abbrechen</button><button class="btn" type="submit">Speichern</button></div>
@@ -190,6 +196,7 @@ function render(){
   const opts=cs.filter(c=>freeCount(c)>0);
   $('seek').innerHTML=!loaded?'<li style="color:var(--mute)">Lädt …</li>':sk.length?sk.map(p=>{const o=opts.filter(c=>c.id!==p.id);return `<li><div class="nm">${esc(p.name)}<span class="tag">${p.role==='egal'?(p.seats>0?'egal · könnte fahren':'egal'):'sucht Platz'}</span></div>
     <div class="acts"><button class="x" data-edit="${esc(p.id)}" aria-label="${esc(p.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(p.id)}" aria-label="${esc(p.name)} austragen">×</button></div>
+    ${p.note?`<p class="note">${esc(p.note)}</p>`:''}
     <select data-join="${esc(p.id)}" aria-label="Einsteigen bei"><option value="">${o.length?'Einsteigen bei …':'Gerade kein Platz frei'}</option>
     ${o.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} (${freeCount(c)} frei)</option>`).join('')}</select></li>`;}).join('')
     :'<li style="color:var(--mute)">Niemand – alle versorgt.</li>';
@@ -206,6 +213,7 @@ function render(){
       <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} Plätze</div></div>
       <div class="acts"><button class="x" data-edit="${esc(c.id)}" aria-label="${esc(c.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div></div>
       <div class="when">${c.from?`<span>${esc(c.from)}</span>`:'<span class="no">Ort offen</span>'}${c.time?`<span>${esc(c.time)} Uhr</span>`:'<span class="no">Zeit offen</span>'}</div>
+      ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
       <div class="seats">${seats.join('')}</div></article>`;}).join('')
     :'<div class="empty"><h3 style="font-size:22px;color:var(--ink);margin-bottom:6px">Noch keine Autos</h3>Wer fahren kann, trägt sich links mit seinen freien Plätzen ein.</div>';
 }
@@ -214,7 +222,7 @@ async function load(){
   const [pp,mm]=await Promise.all([SB.from('people').select('*').order('created_at'),SB.from('meta').select('event').eq('id',1).maybeSingle()]);
   if(pp.error){$('ro').classList.add('on');return;}
   $('ro').classList.remove('on');
-  S.people=pp.data.map(p=>({id:p.id,name:p.name,role:p.role,seats:p.seats,from:p.from_place,time:p.dep_time?p.dep_time.replace(/^0/,''):'',rawTime:p.dep_time||'',ride:p.ride}));
+  S.people=pp.data.map(p=>({id:p.id,name:p.name,role:p.role,seats:p.seats,from:p.from_place,time:p.dep_time?p.dep_time.replace(/^0/,''):'',rawTime:p.dep_time||'',note:p.note||'',ride:p.ride}));
   S.event=mm.data?.event||'';loaded=true;render();
 }
 let t=null;const soon=()=>{clearTimeout(t);t=setTimeout(load,250);};
@@ -250,7 +258,7 @@ $('addForm').addEventListener('submit',async e=>{e.preventDefault();
   if(role!=='mitfahrer'&&!h&&m)return $('err').textContent='Bitte auch die Stunde der Abfahrt auswählen.';
   const time=h?h+':'+(m||'00'):'';
   const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-  const ok=await act('add_person',{p_name:name,p_role:role,p_seats:role==='mitfahrer'?0:(seats>=1&&seats<=8?seats:0),p_from:role==='mitfahrer'?'':from,p_time:role==='mitfahrer'?'':time});
+  const ok=await act('add_person',{p_name:name,p_role:role,p_seats:role==='mitfahrer'?0:(seats>=1&&seats<=8?seats:0),p_from:role==='mitfahrer'?'':from,p_time:role==='mitfahrer'?'':time,p_note:role==='mitfahrer'?'':$('fNote').value.trim()});
   btn.disabled=false;if(ok){e.target.reset();syncForm();}
 });
 $('event').addEventListener('change',e=>act('set_event',{p_event:e.target.value.trim()}));
@@ -275,7 +283,7 @@ function openEdit(id){const p=P(id);if(!p)return;editId=id;
   $('eSeats').min=p.role==='fahrer'?1:0;$('eSeats').value=p.seats;
   $('ePlace').value=PLACES.includes(p.from)?p.from:(p.from?'__other':'');
   $('eFrom').value=PLACES.includes(p.from)?'':p.from;$('eFrom').hidden=$('ePlace').value!=='__other';
-  const [h,m]=(p.rawTime||':').split(':');$('eHour').value=h||'';$('eMin').value=h?m:'';
+  const [h,m]=(p.rawTime||':').split(':');$('eHour').value=h||'';$('eMin').value=h?m:'';$('eNote').value=p.note||'';
   $('edlg').showModal();$('eName').focus();}
 $('eNo').addEventListener('click',()=>$('edlg').close());
 $('eForm').addEventListener('submit',async e=>{e.preventDefault();
@@ -294,7 +302,7 @@ $('eForm').addEventListener('submit',async e=>{e.preventDefault();
     if(!h&&m)return err('Bitte auch die Stunde der Abfahrt auswählen.');
     time=h?h+':'+(m||'00'):'';}
   const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-  const {error}=await SB.rpc('update_person',{p_person:p.id,p_name:name,p_seats:st,p_from:from,p_time:time});
+  const {error}=await SB.rpc('update_person',{p_person:p.id,p_name:name,p_seats:st,p_from:from,p_time:time,p_note:p.role==='mitfahrer'?'':$('eNote').value.trim()});
   btn.disabled=false;
   if(error)return err(error.message||'Das hat nicht geklappt.');
   $('edlg').close();await load();const el=$('car-'+p.id);if(el)el.classList.add('flash');});
