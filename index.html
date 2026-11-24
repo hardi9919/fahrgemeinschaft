@@ -75,6 +75,12 @@ ul.seek{list-style:none;margin:0;padding:0}
 .flash{animation:fl .6s ease}@keyframes fl{from{box-shadow:0 0 0 4px var(--sign)}to{box-shadow:0 0 0 0 transparent}}
 @media(prefers-reduced-motion:reduce){.flash{animation:none}}
 footer{color:var(--mute);font-size:13px;padding-top:0}
+dialog{border:0;border-radius:16px;padding:22px;width:min(92vw,380px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px #0006}
+dialog::backdrop{background:#0008}
+dialog p{margin:0 0 18px}
+.dlgBtns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--bad);color:light-dark(#fff,#1a0000)}
 </style>
 </head>
 <body>
@@ -115,6 +121,11 @@ footer{color:var(--mute);font-size:13px;padding-top:0}
     <div class="cars" id="cars"></div>
   </section>
 </div></main>
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <h2 id="dlgTitle">Eintrag löschen?</h2>
+  <p id="dlgText"></p>
+  <div class="dlgBtns"><button class="btn ghost" id="dlgNo" type="button">Abbrechen</button><button class="btn danger" id="dlgYes" type="button">Löschen</button></div>
+</dialog>
 <footer class="band"><div class="wrap">Alle Einträge sind für jeden sichtbar, der den Link hat, und aktualisieren sich automatisch. Mit × trägt man sich wieder aus.</div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -200,9 +211,15 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.seat&&t.value)act('join_car',{p_person:t.value,p_car:t.dataset.seat},t.dataset.seat);});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.out)act('leave_car',{p_person:b.dataset.out});
-  if(b.dataset.del){const p=P(b.dataset.del);if(p&&!b.dataset.sure){b.dataset.sure='1';b.textContent='?';b.setAttribute('aria-label','Nochmal tippen zum Austragen');setTimeout(()=>{b.dataset.sure='';b.textContent='×';},2500);return;}
-    act('remove_person',{p_person:b.dataset.del});}
+  if(b.dataset.del){const p=P(b.dataset.del);if(!p)return;delId=p.id;
+    const n=riders(p).length;
+    $('dlgText').textContent=`„${p.name}“ wirklich austragen?`+(n?` ${n===1?'Die Person, die':'Die '+n+' Personen, die'} bei ${p.name} mitfährt${n===1?'':'en'}, ${n===1?'sucht':'suchen'} dann wieder einen Platz.`:'');
+    $('dlg').showModal();}
 });
+let delId=null;
+$('dlgNo').addEventListener('click',()=>$('dlg').close());
+$('dlgYes').addEventListener('click',()=>{$('dlg').close();if(delId)act('remove_person',{p_person:delId});delId=null;});
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close();});
 
 render();syncForm();load();
 SB.channel('alles').on('postgres_changes',{event:'*',schema:'public',table:'people'},soon)
