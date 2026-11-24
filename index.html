@@ -47,7 +47,7 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid 
 .roles input:focus-visible+label{outline:3px solid var(--sign);outline-offset:2px}
 .time{display:flex;align-items:center;gap:8px}.time select{width:auto;flex:1}.time span{font-weight:600}
 .car .when{margin-top:10px;font:800 17px/1.3 Overpass,sans-serif;display:flex;flex-wrap:wrap;gap:2px 14px}.car .when span{white-space:nowrap}.car .when .no{color:var(--mute);font-weight:600}
-.note{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--seat);font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.note{margin:10px 0 0;padding:2px 0 2px 10px;border-left:3px solid var(--sign);font-size:14px;line-height:1.4;font-style:italic;overflow-wrap:anywhere}
 .seek .note{grid-column:1/-1;margin:0}
 .hint{font-size:13px;color:var(--mute);margin:6px 0 0}
 .btn{font:600 16px Inter,sans-serif;min-height:44px;padding:10px 18px;border-radius:10px;border:0;cursor:pointer;background:light-dark(var(--road),var(--sign));color:light-dark(#fff,var(--signInk))}
@@ -210,7 +210,7 @@ function render(){
       :`<div class="seatx free"><select data-seat="${esc(c.id)}" aria-label="Freien Platz bei ${esc(c.name)} belegen"><option value="">Platz frei</option>${cand.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div>`);}
     return `<article class="car${maybe?' maybe':''}" id="car-${esc(c.id)}"><div class="top">
       <div class="wheel" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.5 10.5h6M14.5 10.5h6M12 14.5V21"/></svg></div>
-      <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} Plätze</div></div>
+      <div><h3>${esc(c.name)}</h3><div class="sub">${maybe?'würde fahren · noch offen':'fährt'} · ${c.seats} ${c.seats===1?'Platz':'Plätze'}</div></div>
       <div class="acts"><button class="x" data-edit="${esc(c.id)}" aria-label="${esc(c.name)} bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="x" data-del="${esc(c.id)}" aria-label="${esc(c.name)} austragen">×</button></div></div>
       <div class="when">${c.from?`<span>${esc(c.from)}</span>`:'<span class="no">Ort offen</span>'}${c.time?`<span>${esc(c.time)} Uhr</span>`:'<span class="no">Zeit offen</span>'}</div>
       ${c.note?`<p class="note">${esc(c.note)}</p>`:''}
